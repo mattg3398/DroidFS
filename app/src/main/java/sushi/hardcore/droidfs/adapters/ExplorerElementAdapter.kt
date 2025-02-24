@@ -13,6 +13,7 @@ import androidx.core.graphics.drawable.toBitmap
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.RecyclerView
 import kotlinx.coroutines.*
+import sushi.hardcore.droidfs.Constants
 import sushi.hardcore.droidfs.FileTypes
 import sushi.hardcore.droidfs.R
 import sushi.hardcore.droidfs.ThumbnailsLoader
@@ -37,7 +38,7 @@ class ExplorerElementAdapter(
         thumbnailsCache?.evictAll()
         notifyDataSetChanged()
     }
-    var isUsingListLayout = true
+    var layoutVersion = Constants.DEFAULT_LAYOUT_VERSION
     private var thumbnailsLoader: ThumbnailsLoader? = null
     private var thumbnailsCache: LruCache<String, Bitmap>? = null
     var loadThumbnails = true
@@ -193,10 +194,11 @@ class ExplorerElementAdapter(
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
         val view = activity.layoutInflater.inflate(
-            if (isUsingListLayout) {
-                R.layout.adapter_explorer_element_list
-            } else {
-                R.layout.adapter_explorer_element_grid
+            // TODO: add immersive grid type here
+            when (layoutVersion) {
+                Constants.LAYOUT_LIST -> R.layout.adapter_explorer_element_list
+                Constants.LAYOUT_GRID -> R.layout.adapter_explorer_element_grid
+                else -> R.layout.adapter_explorer_element_immersive_grid
             }, parent, false
         )
         return when (viewType) {

@@ -76,7 +76,7 @@ open class BaseExplorerActivity : BaseActivity(), ExplorerElementAdapter.Listene
     protected lateinit var app: VolumeManagerApp
     private var usf_open = false
     private lateinit var linearLayoutManager: LinearLayoutManager
-    private var isUsingListLayout = true
+    private var layoutVersion = Constants.DEFAULT_LAYOUT_VERSION
     private lateinit var layoutIcon: ImageButton
     private lateinit var titleText: TextView
     private lateinit var recycler_view_explorer: RecyclerView
@@ -134,7 +134,9 @@ open class BaseExplorerActivity : BaseActivity(), ExplorerElementAdapter.Listene
         currentDirectoryPath = explorerViewModel.currentDirectoryPath
         linearLayoutManager = LinearLayoutManager(this@BaseExplorerActivity)
         recycler_view_explorer.adapter = explorerAdapter
-        isUsingListLayout = sharedPrefs.getBoolean("useListLayout", true)
+        // Migrate safely from previous boolean
+        val boolean_layout = if (sharedPrefs.getBoolean("useListLayout", true)) Constants.LAYOUT_LIST else Constants.LAYOUT_GRID
+        layoutVersion = sharedPrefs.getInt(Constants.LAYOUT_VERSION_KEY, boolean_layout)
         layoutIcon = findViewById(R.id.layout_icon)
         setRecyclerViewLayout()
         onBackPressedDispatcher.addCallback(this) {
@@ -151,11 +153,11 @@ open class BaseExplorerActivity : BaseActivity(), ExplorerElementAdapter.Listene
             }
         }
         layoutIcon.setOnClickListener {
-            isUsingListLayout = !isUsingListLayout
+            layoutVersion = (layoutVersion + 1) % Constants.NUM_LAYOUT_VERSIONS
             setRecyclerViewLayout()
             recycler_view_explorer.recycledViewPool.clear()
             with (sharedPrefs.edit()) {
-                putBoolean("useListLayout", isUsingListLayout)
+                putInt(Constants.LAYOUT_VERSION_KEY, layoutVersion)
                 apply()
             }
         }
@@ -171,14 +173,22 @@ open class BaseExplorerActivity : BaseActivity(), ExplorerElementAdapter.Listene
     }
 
     private fun setRecyclerViewLayout() {
-        layoutIcon.setImageResource(if (isUsingListLayout) {
-            recycler_view_explorer.layoutManager = linearLayoutManager
-            explorerAdapter.isUsingListLayout = true
-            R.drawable.icon_view_grid
-        } else {
-            recycler_view_explorer.layoutManager = GridLayoutManager(this, gridColumnCount)
-            explorerAdapter.isUsingListLayout = false
-            R.drawable.icon_view_list
+        explorerAdapter.layoutVersion = layoutVersion
+        layoutIcon.setImageResource(when (layoutVersion) {
+            Constants.LAYOUT_LIST -> {
+                recycler_view_explorer.layoutManager = linearLayoutManager
+                R.drawable.icon_view_grid
+            }
+            Constants.LAYOUT_GRID -> {
+                recycler_view_explorer.layoutManager = GridLayoutManager(this, gridColumnCount)
+                //TODO: add new icon
+                R.drawable.icon_view_grid
+            }
+            // Cover edge cases like reversions, replace with LAYOUT_IMMERSIVE_GRID if a new layout is added
+            else -> {
+                recycler_view_explorer.layoutManager = GridLayoutManager(this, gridColumnCount)
+                R.drawable.icon_view_list
+            }
         })
     }
 

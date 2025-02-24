@@ -18,4 +18,10 @@ object Constants {
     const val GRID_COLUMN_COUNT_KEY = "grid_column_count"
     const val DEFAULT_GRID_COLUMN_COUNT = 3
     const val PIN_PASSWORDS_KEY = "pin_passwords"
+    const val LAYOUT_LIST = 0
+    const val LAYOUT_GRID = 1
+    const val LAYOUT_IMMERSIVE_GRID = 2
+    const val NUM_LAYOUT_VERSIONS = 3
+    const val LAYOUT_VERSION_KEY = "layout_version"
+    const val DEFAULT_LAYOUT_VERSION = LAYOUT_LIST
 }
